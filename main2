@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <time.h>
+#include <fstream>
 using namespace std;
 
 // the format of the messages in the buffer
@@ -85,7 +86,7 @@ private:
 };
 
 Menu::Menu() {
-	while (UserInput != '4') {		// loop until the user wishes to exit
+	while (UserInput != '6') {		// loop until the user wishes to exit
 
 		// show the menu of options
 		cout << endl;
@@ -94,7 +95,9 @@ Menu::Menu() {
 		cout << "1. Produce a new message for the buffer" << endl;
 		cout << "2. Consume a message from the buffer" << endl;
 		cout << "3. View the contents of the buffer" << endl;
-		cout << "4. Exit from the program" << endl << endl;
+		cout << "4. Save the contents of the buffer to the disc" << endl;
+		cout << "5. Load messages from the disc to the buffer" << endl;
+		cout << "6. Exit from the program" << endl << endl;
 
 		// get the user's choice
 		cout << "Enter your option: ";
@@ -113,6 +116,10 @@ Menu::Menu() {
 
 		case '3':
 			buffer.Show();
+			break;
+
+		case '4':
+			buffer.Save();
 			break;
 
 		default:
@@ -253,5 +260,31 @@ void Circularbuffer::Show() const
 
 void Circularbuffer::Save() const
 {
+	unsigned long count; // count through the messages being displayed
+	unsigned long buffer_head;  // the position at which the next message would be pushed
+	fstream FilePointer;
+	FilePointer.open("datafile.dat", ios::out | ios::binary);
+	buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
+	if (buffer_tail < buffer_head) {
+		for (count = buffer_tail; count < buffer_head; count++) {
+			FilePointer << count << "\t";
+			FilePointer << message[count].data << "\t";
+			FilePointer << ctime(&message[count].time);
+		}
+	}
 
+	// display messages if part are at the end of the array and the remainder at the start
+	else {
+		for (count = buffer_tail; count < BUFFER_LENGTH; count++) {
+			FilePointer << count << "\t";
+			FilePointer << message[count].data << "\t";
+			FilePointer << ctime(&message[count].time);
+		}
+		for (count = 0; count < buffer_head; count++) {
+			FilePointer << count << "\t";
+			FilePointer << message[count].data << "\t";
+			FilePointer << ctime(&message[count].time);
+		}
+	}
+	FilePointer.close();
 }
