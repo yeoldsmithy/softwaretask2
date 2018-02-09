@@ -269,14 +269,15 @@ void Circularbuffer::Show() const
 
 void Circularbuffer::Save() const
 {
+	fstream FilePointer;
+	FilePointer.open("datafile.dat", ios::out);
 	if (buffer_length == 0) {
 		cout << "No messages in the buffer, cannot save." << endl;
+		FilePointer << buffer_length << "\n";
 	}
 	else {
 		unsigned long count; // count through the messages being displayed
 		unsigned long buffer_head;  // the position at which the next message would be pushed
-		fstream FilePointer;
-		FilePointer.open("datafile.dat", ios::out);
 		FilePointer << buffer_length << "\n";
 		buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
 		if (buffer_tail < buffer_head) {
@@ -300,14 +301,14 @@ void Circularbuffer::Save() const
 				FilePointer << ctime(&message[count].time);
 			}
 		}
-		FilePointer.close();
 	}
+	FilePointer.close();
 }
 
 void Circularbuffer::Load()
 {
 	unsigned long count; // count through the messages being loaded
-	
+
 	fstream FilePointer;
 	FilePointer.open("datafile.dat", ios::in);
 
@@ -319,25 +320,25 @@ void Circularbuffer::Load()
 
 	FilePointer >> buffer_length;
 
-		for (count = 0; count < buffer_length; count++)
+	for (count = 0; count < buffer_length; count++)
+	{
+		FilePointer >> count;
+		FilePointer >> message[count].data;
+		FilePointer >> ctime(&message[count].time);
+
+		cout << count << "\t";
+		cout << message[count].data << "\t";
+		cout << ctime(&message[count].time);
+	}
+	buffer_tail = 0;
+
+	if (buffer_length != BUFFER_LENGTH) {
+
+		for (count++; count < BUFFER_LENGTH; count++)
 		{
-			FilePointer >> count;
-			FilePointer >> message[count].data;
-			FilePointer >> ctime(&message[count].time);
-
-			cout << count << "\t";
-			cout << message[count].data << "\t";
-			cout << ctime(&message[count].time);
+			message[count].data = 0;
+			message[count].time = 0;
 		}
-		buffer_tail = 0;
-
-		if (buffer_length != BUFFER_LENGTH) {
-
-			for (count++; count < BUFFER_LENGTH; count++)
-			{
-				message[count].data = 0;
-				message[count].data = 0;
-			}
-		}
+	}
 	FilePointer.close();
 }
