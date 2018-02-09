@@ -1,0 +1,5 @@
+	for (int i = 0; i < BUFFER_LENGTH; i++)
+	{
+		message[i].data = 0;
+		message[i].time = 0;
+		}
