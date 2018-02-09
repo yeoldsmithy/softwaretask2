@@ -53,6 +53,7 @@ public:
 	void Consume();
 	void Show() const;
 	void Save() const;
+	void Load();
 
 private:
 	//Member variables
@@ -88,7 +89,7 @@ private:
 Menu::Menu() {
 	while (UserInput != '6') {		// loop until the user wishes to exit
 
-		// show the menu of options
+									// show the menu of options
 		cout << endl;
 		cout << "Buffer Management Menu" << endl;
 		cout << "----------------------" << endl;
@@ -120,6 +121,14 @@ Menu::Menu() {
 
 		case '4':
 			buffer.Save();
+			break;
+
+		case '5':
+			buffer.Load();
+			break;
+
+		case '6':
+			cout << "Program is now closing \n";
 			break;
 
 		default:
@@ -263,7 +272,7 @@ void Circularbuffer::Save() const
 	unsigned long count; // count through the messages being displayed
 	unsigned long buffer_head;  // the position at which the next message would be pushed
 	fstream FilePointer;
-	FilePointer.open("datafile.dat", ios::out | ios::binary);
+	FilePointer.open("datafile.dat", ios::out);
 	buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
 	if (buffer_tail < buffer_head) {
 		for (count = buffer_tail; count < buffer_head; count++) {
@@ -286,5 +295,62 @@ void Circularbuffer::Save() const
 			FilePointer << ctime(&message[count].time);
 		}
 	}
+	FilePointer.close();
+}
+
+void Circularbuffer::Load()
+{
+	unsigned long count; // count through the messages being displayed
+	unsigned long buffer_head;  // the position at which the next message would be pushed
+	fstream FilePointer;
+	FilePointer.open("datafile.dat", ios::in);
+
+	if (!FilePointer.good())
+	{
+		cout << "FATAL ERROR" << endl;
+		exit(1);
+	}
+
+	// Decides in which order the messages need to be loaded depending
+	// on the number of messages in the buffer.
+
+	buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
+		for (count = buffer_tail; count < buffer_head; count++)
+		{
+			FilePointer >> count;
+			FilePointer >> message[count].data;
+			FilePointer >> ctime(&message[count].time);
+
+			cout << count << "\t";
+			cout << message[count].data << "\t";
+			cout << ctime(&message[count].time);
+		}
+		buffer_tail = 0;
+		buffer_length = count;
+
+	// loads messages if part are at the end of the array and the remainder at the start
+	//else
+	//{
+	//	for (count = buffer_tail; count < BUFFER_LENGTH; count++)
+	//	{
+	//		FilePointer >> count;
+	//		FilePointer >> message[count].data;
+	//		FilePointer >> ctime(&message[count].time);
+
+
+	//		cout << count << "\t";
+	//		cout << message[count].data << "\t";
+	//		cout << ctime(&message[count].time);
+	//	}
+	//	for (count = 0; count < buffer_head; count++)
+	//	{
+	//		FilePointer << count << "\t";
+	//		FilePointer << message[count].data << "\t";
+	//		FilePointer << ctime(&message[count].time);
+	//	}
+	//	buffer_length = BUFFER_LENGTH - buffer_length + buffer_head;
+	//	buffer_tail = 0;
+
+	//}
 	FilePointer.close();
 }
