@@ -9,7 +9,8 @@
 // The circular buffer holds messages entered by the user which are to be sent to the
 // screen. The operation of the buffer is controlled by a menu from which the user can
 // choose one of the following: enter a new message, send (consume) a message from the
-// buffer or display the contents of the buffer.
+// buffer, display the contents of the buffer, save the contents of the buffer to
+// to a file or populate the buffer by loading from the file.
 //
 // The buffer is implemented as a fixed length array. Once all the elements in the array
 // have been filled, the first element will need to be used again. As an example of the
@@ -54,6 +55,7 @@ public:
 	void Show() const;
 	void Save() const;
 	void Load();
+	bool save_check = false;
 
 private:
 	//Member variables
@@ -64,101 +66,14 @@ private:
 
 };
 
-Circularbuffer::Circularbuffer() { //Define constructor
+Circularbuffer::Circularbuffer() {} //Constructor
 
-}
-
-Circularbuffer::~Circularbuffer() {
-
-}
-
-class Menu {
-public:
-	//Default Constructor
-	Menu();
-
-	//Default Destructor
-	~Menu();
-
-private:
-	//Member variables
-	Circularbuffer buffer;
-	char UserInput;
-};
-
-Menu::Menu() {
-	while (UserInput != '6') {		// loop until the user wishes to exit
-
-									// show the menu of options
-		cout << endl;
-		cout << "Buffer Management Menu" << endl;
-		cout << "----------------------" << endl;
-		cout << "1. Produce a new message for the buffer" << endl;
-		cout << "2. Consume a message from the buffer" << endl;
-		cout << "3. View the contents of the buffer" << endl;
-		cout << "4. Save the contents of the buffer to the disc" << endl;
-		cout << "5. Load messages from the disc to the buffer" << endl;
-		cout << "6. Exit from the program" << endl << endl;
-
-		// get the user's choice
-		cout << "Enter your option: ";
-		cin >> UserInput;
-		cout << endl;
-
-		// act on the user's input
-		switch (UserInput) {
-		case '1':
-			buffer.Produce();
-			break;
-
-		case '2':
-			buffer.Consume();
-			break;
-
-		case '3':
-			buffer.Show();
-			break;
-
-		case '4':
-			buffer.Save();
-			break;
-
-		case '5':
-			buffer.Load();
-			break;
-
-		case '6':
-			cout << "Program is now closing \n";
-			break;
-
-		default:
-			cout << "Invalid entry" << endl << endl;
-			break;
-		}
-	}
-}
-
-Menu::~Menu() {
-
-}
-
-// Control the entering, sending and displaying of messages in the buffer.
-// Arguments: None
-// Returns: 0 on completion
-int main()
-{
-	Menu Menu;
-}
-
-
+Circularbuffer::~Circularbuffer() {} //Destructor
 
 // Create a new message and add it to the head of the buffer.
 // The data for the message is obtained from the user and a time stamp is obtained from the
 // time() function in the C standard library. 
-// Arguments:
-//   (1) start of the buffer
-//   (2) position of the tail of the buffer
-//   (3) number of messages in the buffer
+
 // Returns: void
 void Circularbuffer::Produce()
 {
@@ -267,6 +182,12 @@ void Circularbuffer::Show() const
 	}
 }
 
+// Save all of the messages in the buffer to disk.
+// Arguments:
+//   (1) start of the buffer
+//   (2) position of the tail of the buffer
+//   (3) number of messages in the buffer
+// Returns: void
 void Circularbuffer::Save() const
 {
 	fstream FilePointer;
@@ -307,38 +228,121 @@ void Circularbuffer::Save() const
 
 void Circularbuffer::Load()
 {
-	unsigned long count; // count through the messages being loaded
-
-	fstream FilePointer;
-	FilePointer.open("datafile.dat", ios::in);
-
-	if (!FilePointer.good())
-	{
-		cout << "FATAL ERROR" << endl;
-		exit(1);
+	if (save_check == false) {
+		cout << "Nothing has been saved since the start of the program \n";
 	}
+	else {
+		unsigned long count; // count through the messages being loaded
 
-	FilePointer >> buffer_length;
+		fstream FilePointer;
+		FilePointer.open("datafile.dat", ios::in);
 
-	for (count = 0; count < buffer_length; count++)
-	{
-		FilePointer >> count;
-		FilePointer >> message[count].data;
-		FilePointer >> ctime(&message[count].time);
-
-		cout << count << "\t";
-		cout << message[count].data << "\t";
-		cout << ctime(&message[count].time);
-	}
-	buffer_tail = 0;
-
-	if (buffer_length != BUFFER_LENGTH) {
-
-		for (count++; count < BUFFER_LENGTH; count++)
+		if (!FilePointer.good())
 		{
-			message[count].data = 0;
-			message[count].time = 0;
+			cout << "FATAL ERROR" << endl;
+			exit(1);
+		}
+
+		FilePointer >> buffer_length;
+
+		for (count = 0; count < buffer_length; count++)
+		{
+			FilePointer >> count;
+			FilePointer >> message[count].data;
+			FilePointer >> ctime(&message[count].time);
+
+			cout << count << "\t";
+			cout << message[count].data << "\t";
+			cout << ctime(&message[count].time);
+		}
+		buffer_tail = 0;
+
+		if (buffer_length != BUFFER_LENGTH) {
+
+			for (count++; count < BUFFER_LENGTH; count++)
+			{
+				message[count].data = 0;
+				message[count].time = 0;
+			}
+		}
+		FilePointer.close();
+	}
+}
+
+
+//The menu class contains all of the menu options.
+class Menu {
+public:
+	//Default Constructor
+	Menu();
+
+	//Default Destructor
+	~Menu();
+
+private:
+	//Member variables
+	Circularbuffer buffer;
+	char UserInput;
+};
+
+Menu::~Menu() { //Destructor
+
+}
+
+Menu::Menu() {
+	while (UserInput != '6') {		// loop until the user wishes to exit
+
+									// show the menu of options
+		cout << endl;
+		cout << "Buffer Management Menu" << endl;
+		cout << "----------------------" << endl;
+		cout << "1. Produce a new message for the buffer" << endl;
+		cout << "2. Consume a message from the buffer" << endl;
+		cout << "3. View the contents of the buffer" << endl;
+		cout << "4. Save the contents of the buffer to the disc" << endl;
+		cout << "5. Load messages from the disc to the buffer" << endl;
+		cout << "6. Exit from the program" << endl << endl;
+
+		// get the user's choice
+		cout << "Enter your option: ";
+		cin >> UserInput;
+		cout << endl;
+
+		// act on the user's input
+		switch (UserInput) {
+		case '1':
+			buffer.Produce();
+			break;
+
+		case '2':
+			buffer.Consume();
+			break;
+
+		case '3':
+			buffer.Show();
+			break;
+
+		case '4':
+			buffer.save_check = true;
+			buffer.Save();
+			break;
+
+		case '5':
+			buffer.Load();
+			break;
+
+		case '6':
+			cout << "Program is now closing \n";
+			break;
+
+		default:
+			cout << "Invalid entry" << endl << endl;
+			break;
 		}
 	}
-	FilePointer.close();
+}
+
+int main()
+{
+	Menu Menu;
 }
