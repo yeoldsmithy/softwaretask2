@@ -310,12 +310,12 @@ void Circularbuffer::Load()
 	/*FilePointer.seekg(0, FilePointer.end);
 	int buffer_head = FilePointer.tellg();*/
 
-		for (count = buffer_tail; count < BUFFER_LENGTH; count++) {
-			FilePointer >> message[count].data;
-			FilePointer >> ctime(&message[count].time);
-			cout << message[count].data;
-			cout << ctime(&message[count].time);
-		}
+	for (count = 0; count < BUFFER_LENGTH; count++) {
+		FilePointer >> message[count].data;
+		FilePointer >> ctime(&message[count].time);
+		cout << message[count].data;
+		cout << ctime(&message[count].time);
+	}
 
-		FilePointer.close();
+	FilePointer.close();
 }
