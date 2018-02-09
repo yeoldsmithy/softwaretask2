@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <time.h>
+#include <fstream>
 using namespace std;
 
 // the format of the messages in the buffer
@@ -48,13 +49,18 @@ public:
 	~Circularbuffer();
 
 	// function prototypes
-	void Produce(Message*, unsigned long&, unsigned long&);
-	void Consume(const Message*, unsigned long&, unsigned long&);
-	void Show(const Message*, unsigned long, unsigned long);
+	void Produce();
+	void Consume();
+	void Show() const;
+	void Save() const;
+	void Load();
 
 private:
 	//Member variables
-
+	unsigned long buffer_tail = 0;  // position of the tail in the message buffer -
+									// the next message will be consumed from here
+	unsigned long buffer_length = 0;  // number of messages in the buffer
+	Message message[BUFFER_LENGTH];
 
 };
 
@@ -75,25 +81,24 @@ public:
 	~Menu();
 
 private:
+	//Member variables
 	Circularbuffer buffer;
 	char UserInput;
-	unsigned long buffer_tail = 0;  // position of the tail in the message buffer -
-									// the next message will be consumed from here
-	unsigned long buffer_length = 0;  // number of messages in the buffer
-	Message message[BUFFER_LENGTH];
 };
 
 Menu::Menu() {
-	while (UserInput != '4') {		// loop until the user wishes to exit
+	while (UserInput != '6') {		// loop until the user wishes to exit
 
-		// show the menu of options
+									// show the menu of options
 		cout << endl;
 		cout << "Buffer Management Menu" << endl;
 		cout << "----------------------" << endl;
 		cout << "1. Produce a new message for the buffer" << endl;
 		cout << "2. Consume a message from the buffer" << endl;
 		cout << "3. View the contents of the buffer" << endl;
-		cout << "4. Exit from the program" << endl << endl;
+		cout << "4. Save the contents of the buffer to the disc" << endl;
+		cout << "5. Load messages from the disc to the buffer" << endl;
+		cout << "6. Exit from the program" << endl << endl;
 
 		// get the user's choice
 		cout << "Enter your option: ";
@@ -103,15 +108,27 @@ Menu::Menu() {
 		// act on the user's input
 		switch (UserInput) {
 		case '1':
-			buffer.Produce(message, buffer_tail, buffer_length);
+			buffer.Produce();
 			break;
 
 		case '2':
-			buffer.Consume(message, buffer_tail, buffer_length);
+			buffer.Consume();
 			break;
 
 		case '3':
-			buffer.Show(message, buffer_tail, buffer_length);
+			buffer.Show();
+			break;
+
+		case '4':
+			buffer.Save();
+			break;
+
+		case '5':
+			buffer.Load();
+			break;
+
+		case '6':
+			cout << "Program is now closing \n";
 			break;
 
 		default:
@@ -143,27 +160,27 @@ int main()
 //   (2) position of the tail of the buffer
 //   (3) number of messages in the buffer
 // Returns: void
-void Circularbuffer::Produce(Message* buffer, unsigned long& buffer_tail, unsigned long& buffer_len)
+void Circularbuffer::Produce()
 {
 	time_t current_time;
 	unsigned long buffer_head;
 
 	// find the element of the buffer in which to store the message
-	buffer_head = (buffer_tail + buffer_len) % BUFFER_LENGTH;
+	buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
 
 	// get the value of the data for the message from the user
 	cout << "Add new data" << endl;
 	cout << "------------" << endl;
 	cout << "Enter data: ";
-	cin >> buffer[buffer_head].data;
+	cin >> message[buffer_head].data;
 	cout << endl;
 
 	// get the value of the time for the message
-	buffer[buffer_head].time = time(&current_time);
+	message[buffer_head].time = time(&current_time);
 
 	// if no buffer overflow has occurred, adjust the buffer length
-	if (buffer_len < BUFFER_LENGTH) {
-		buffer_len++;
+	if (buffer_length < BUFFER_LENGTH) {
+		buffer_length++;
 	}
 
 	// if a buffer overflow has occurred, display an error statement
@@ -180,10 +197,10 @@ void Circularbuffer::Produce(Message* buffer, unsigned long& buffer_tail, unsign
 //   (2) position of the tail of the buffer
 //   (3) number of messages in the buffer
 // Returns: void
-void Circularbuffer::Consume(const Message* buffer, unsigned long& buffer_tail, unsigned long& buffer_len)
+void Circularbuffer::Consume()
 {
 	// if the buffer is empty, display an error statement
-	if (buffer_len == 0) {
+	if (buffer_length == 0) {
 		cout << "No messages in the buffer" << endl;
 	}
 
@@ -193,10 +210,10 @@ void Circularbuffer::Consume(const Message* buffer, unsigned long& buffer_tail, 
 		cout << endl;
 		cout << "Offset Data        Time" << endl;
 		cout << buffer_tail << "\t";
-		cout << buffer[buffer_tail].data << "\t";
-		cout << ctime(&buffer[buffer_tail].time);
+		cout << message[buffer_tail].data << "\t";
+		cout << ctime(&message[buffer_tail].time);
 		buffer_tail = (buffer_tail + 1) % BUFFER_LENGTH;
-		buffer_len--;
+		buffer_length--;
 	}
 }
 
@@ -208,13 +225,13 @@ void Circularbuffer::Consume(const Message* buffer, unsigned long& buffer_tail, 
 //   (2) position of the tail of the buffer
 //   (3) number of messages in the buffer
 // Returns: void
-void Circularbuffer::Show(const Message* buffer, unsigned long buffer_tail, unsigned long buffer_len)
+void Circularbuffer::Show() const
 {
 	unsigned long count; // count through the messages being displayed
 	unsigned long buffer_head;  // the position at which the next message would be pushed
 
 								// if the buffer is empty, display an error statement
-	if (buffer_len == 0) {
+	if (buffer_length == 0) {
 		cout << "No messages in the buffer" << endl;
 	}
 
@@ -225,12 +242,12 @@ void Circularbuffer::Show(const Message* buffer, unsigned long buffer_tail, unsi
 		cout << "Offset Data        Time" << endl;
 
 		// display messages if they are sequential in the array
-		buffer_head = (buffer_tail + buffer_len) % BUFFER_LENGTH;
+		buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
 		if (buffer_tail < buffer_head) {
 			for (count = buffer_tail; count < buffer_head; count++) {
 				cout << count << "\t";
-				cout << buffer[count].data << "\t";
-				cout << ctime(&buffer[count].time);
+				cout << message[count].data << "\t";
+				cout << ctime(&message[count].time);
 			}
 		}
 
@@ -238,14 +255,89 @@ void Circularbuffer::Show(const Message* buffer, unsigned long buffer_tail, unsi
 		else {
 			for (count = buffer_tail; count < BUFFER_LENGTH; count++) {
 				cout << count << "\t";
-				cout << buffer[count].data << "\t";
-				cout << ctime(&buffer[count].time);
+				cout << message[count].data << "\t";
+				cout << ctime(&message[count].time);
 			}
 			for (count = 0; count < buffer_head; count++) {
 				cout << count << "\t";
-				cout << buffer[count].data << "\t";
-				cout << ctime(&buffer[count].time);
+				cout << message[count].data << "\t";
+				cout << ctime(&message[count].time);
 			}
 		}
 	}
+}
+
+void Circularbuffer::Save() const
+{
+	if (buffer_length == 0) {
+		cout << "No messages in the buffer, cannot save." << endl;
+	}
+	else {
+		unsigned long count; // count through the messages being displayed
+		unsigned long buffer_head;  // the position at which the next message would be pushed
+		fstream FilePointer;
+		FilePointer.open("datafile.dat", ios::out);
+		FilePointer << buffer_length << "\n";
+		buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
+		if (buffer_tail < buffer_head) {
+			for (count = buffer_tail; count < buffer_head; count++) {
+				FilePointer << count << "\t";
+				FilePointer << message[count].data << "\t";
+				FilePointer << ctime(&message[count].time);
+			}
+		}
+
+		// display messages if part are at the end of the array and the remainder at the start
+		else {
+			for (count = buffer_tail; count < BUFFER_LENGTH; count++) {
+				FilePointer << count << "\t";
+				FilePointer << message[count].data << "\t";
+				FilePointer << ctime(&message[count].time);
+			}
+			for (count = 0; count < buffer_head; count++) {
+				FilePointer << count << "\t";
+				FilePointer << message[count].data << "\t";
+				FilePointer << ctime(&message[count].time);
+			}
+		}
+		FilePointer.close();
+	}
+}
+
+void Circularbuffer::Load()
+{
+	unsigned long count; // count through the messages being loaded
+	
+	fstream FilePointer;
+	FilePointer.open("datafile.dat", ios::in);
+
+	if (!FilePointer.good())
+	{
+		cout << "FATAL ERROR" << endl;
+		exit(1);
+	}
+
+	FilePointer >> buffer_length;
+
+		for (count = 0; count < buffer_length; count++)
+		{
+			FilePointer >> count;
+			FilePointer >> message[count].data;
+			FilePointer >> ctime(&message[count].time);
+
+			cout << count << "\t";
+			cout << message[count].data << "\t";
+			cout << ctime(&message[count].time);
+		}
+		buffer_tail = 0;
+
+		if (buffer_length != BUFFER_LENGTH) {
+
+			for (count++; count < BUFFER_LENGTH; count++)
+			{
+				message[count].data = 0;
+				message[count].data = 0;
+			}
+		}
+	FilePointer.close();
 }
