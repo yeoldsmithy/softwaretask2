@@ -1,4 +1,3 @@
-
 // A program to demonstrate the operation of a circular buffer.
 //
 // General description
@@ -57,15 +56,16 @@ public:
 	void Load();
 
 private:
+	bool save_check; // has data been saved before?
 	//Member variables
 	unsigned long buffer_tail = 0;  // position of the tail in the message buffer -
 									// the next message will be consumed from here
 	unsigned long buffer_length = 0;  // number of messages in the buffer
 	Message message[BUFFER_LENGTH];
-
 };
 
 Circularbuffer::Circularbuffer() { //Define constructor
+	bool save_check = false; // has data been saved before?
 
 }
 
@@ -87,69 +87,10 @@ private:
 	char UserInput;
 };
 
-Menu::Menu() {
-	while (UserInput != '6') {		// loop until the user wishes to exit
-
-									// show the menu of options
-		cout << endl;
-		cout << "Buffer Management Menu" << endl;
-		cout << "----------------------" << endl;
-		cout << "1. Produce a new message for the buffer" << endl;
-		cout << "2. Consume a message from the buffer" << endl;
-		cout << "3. View the contents of the buffer" << endl;
-		cout << "4. Save the contents of the buffer to the disc" << endl;
-		cout << "5. Load messages from the disc to the buffer" << endl;
-		cout << "6. Exit from the program" << endl << endl;
-
-		// get the user's choice
-		cout << "Enter your option: ";
-		cin >> UserInput;
-		cout << endl;
-
-		// act on the user's input
-		switch (UserInput) {
-		case '1':
-			buffer.Produce();
-			break;
-
-		case '2':
-			buffer.Consume();
-			break;
-
-		case '3':
-			buffer.Show();
-			break;
-
-		case '4':
-			buffer.Save();
-			break;
-
-		case '5':
-			buffer.Load();
-			break;
-
-		case '6':
-			cout << "Program is now closing \n";
-			break;
-
-		default:
-			cout << "Invalid entry" << endl << endl;
-			break;
-		}
-	}
-}
-
 Menu::~Menu() {
 
 }
 
-// Control the entering, sending and displaying of messages in the buffer.
-// Arguments: None
-// Returns: 0 on completion
-int main()
-{
-	Menu Menu;
-}
 
 
 
@@ -270,15 +211,14 @@ void Circularbuffer::Show() const
 
 void Circularbuffer::Save() const
 {
-	fstream FilePointer;
-	FilePointer.open("datafile.dat", ios::out);
 	if (buffer_length == 0) {
 		cout << "No messages in the buffer, cannot save." << endl;
-		FilePointer << buffer_length << "\n";
 	}
 	else {
 		unsigned long count; // count through the messages being displayed
 		unsigned long buffer_head;  // the position at which the next message would be pushed
+		fstream FilePointer;
+		FilePointer.open("datafile.dat", ios::out);
 		FilePointer << buffer_length << "\n";
 		buffer_head = (buffer_tail + buffer_length) % BUFFER_LENGTH;
 		if (buffer_tail < buffer_head) {
@@ -302,8 +242,8 @@ void Circularbuffer::Save() const
 				FilePointer << ctime(&message[count].time);
 			}
 		}
+		FilePointer.close();
 	}
-	FilePointer.close();
 }
 
 void Circularbuffer::Load()
@@ -338,8 +278,65 @@ void Circularbuffer::Load()
 		for (count++; count < BUFFER_LENGTH; count++)
 		{
 			message[count].data = 0;
-			message[count].time = 0;
+			message[count].data = 0;
 		}
 	}
 	FilePointer.close();
+}
+
+Menu::Menu() {
+	while (UserInput != '6') {		// loop until the user wishes to exit
+
+									// show the menu of options
+		cout << endl;
+		cout << "Buffer Management Menu" << endl;
+		cout << "----------------------" << endl;
+		cout << "1. Produce a new message for the buffer" << endl;
+		cout << "2. Consume a message from the buffer" << endl;
+		cout << "3. View the contents of the buffer" << endl;
+		cout << "4. Save the contents of the buffer to the disc" << endl;
+		cout << "5. Load messages from the disc to the buffer" << endl;
+		cout << "6. Exit from the program" << endl << endl;
+
+		// get the user's choice
+		cout << "Enter your option: ";
+		cin >> UserInput;
+		cout << endl;
+
+		// act on the user's input
+		switch (UserInput) {
+		case '1':
+			buffer.Produce();
+			break;
+
+		case '2':
+			buffer.Consume();
+			break;
+
+		case '3':
+			buffer.Show();
+			break;
+
+		case '4':
+			buffer.Save();
+			break;
+
+		case '5':
+			buffer.Load();
+			break;
+
+		case '6':
+			cout << "Program is now closing \n";
+			break;
+
+		default:
+			cout << "Invalid entry" << endl << endl;
+			break;
+		}
+	}
+}
+
+int main()
+{
+	Menu Menu;
 }
